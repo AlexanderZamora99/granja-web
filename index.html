@@ -17,6 +17,7 @@
   </script>
   <script src="app.js" defer></script>
   <script src="mixto.js" defer></script>
+  <script src="galeria.js" defer></script>
   <script src="chat.js" defer></script>
 </head>
 <body>
@@ -29,6 +30,7 @@
         <span data-campo="nombre">Huevos frescos</span>
       </a>
       <nav class="menu" aria-label="Secciones">
+        <a href="#granja" id="menu-granja" hidden>La granja</a>
         <a href="#catalogo">Catálogo</a>
         <a href="#pedido">Pedido</a>
         <a href="#nosotros">Nosotros</a>
@@ -57,6 +59,26 @@
         </ul>
       </div>
     </section>
+
+    <section id="granja" class="seccion" aria-labelledby="titulo-granja" hidden>
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <h2 id="titulo-granja">Conoce a nuestras gallinas</h2>
+          <p class="nota">Fotos reales de nuestra granja, de donde salen tus huevos.</p>
+        </div>
+        <div class="galeria" id="galeria"></div>
+      </div>
+    </section>
+
+    <dialog class="visor" id="visor" aria-label="Foto ampliada">
+      <figure>
+        <img id="visor-imagen" alt="">
+        <figcaption id="visor-texto"></figcaption>
+      </figure>
+      <button class="boton-icono visor-cerrar" type="button" id="visor-cerrar" aria-label="Cerrar">×</button>
+      <button class="boton-icono visor-anterior" type="button" id="visor-anterior" aria-label="Foto anterior">‹</button>
+      <button class="boton-icono visor-siguiente" type="button" id="visor-siguiente" aria-label="Foto siguiente">›</button>
+    </dialog>
 
     <section id="catalogo" class="seccion">
       <div class="contenedor">
