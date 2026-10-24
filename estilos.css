@@ -249,6 +249,28 @@ input:focus, select:focus { border-color: var(--primario); outline: none; box-sh
 .formulario-agregar .aviso-stock { grid-column: 1 / -1; }
 .formulario-agregar .aviso-stock:empty { display: none; }
 
+/* ---------- Panal mixto ---------- */
+.mixto { margin-top: 24px; display: grid; gap: 16px; }
+.mixto h3, .mixto .nota { margin: 0; }
+.mixto-opciones { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); }
+.mixto-opcion {
+  display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); font: inherit; cursor: pointer;
+}
+.mixto-opcion:hover { border-color: var(--primario); }
+.mixto-opcion[aria-checked="true"] { border-color: var(--primario); box-shadow: 0 0 0 2px var(--primario); }
+.mixto-opcion-precio { font-size: 1.25rem; font-weight: 700; }
+.mixto-opcion-detalle { color: var(--texto-suave); font-size: .85rem; }
+.mixto-tipos { display: grid; gap: 8px; }
+.mixto-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--borde); }
+.mixto-fila-agotada { opacity: .55; }
+.mixto-valor { min-width: 2.5ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; align-self: center; }
+.mixto-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.mixto-conteo { margin: 0; color: var(--texto-suave); }
+.mixto-precio { margin: 0; font-size: 1.4rem; font-weight: 700; }
+.mixto .aviso-stock:empty { display: none; }
+.boton-icono:disabled { opacity: .4; cursor: not-allowed; }
+
 /* ---------- Asistente de ventas ---------- */
 .chat-lanzador {
   position: fixed; right: 16px; bottom: 16px; z-index: 16;

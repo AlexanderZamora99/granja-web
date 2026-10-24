@@ -16,6 +16,7 @@
     } catch (e) {}
   </script>
   <script src="app.js" defer></script>
+  <script src="mixto.js" defer></script>
   <script src="chat.js" defer></script>
 </head>
 <body>
@@ -94,6 +95,21 @@
             <button class="boton boton-principal" type="submit">Agregar al pedido</button>
             <p class="aviso-stock" id="aviso-agregar" aria-live="polite"></p>
           </form>
+
+          <section id="mixto" class="tarjeta mixto" aria-labelledby="titulo-mixto">
+            <h3 id="titulo-mixto">Arma un panal mixto de 30</h3>
+            <p class="nota">Combina tamaños en un solo panal. Elige la opción que más te convenga o ajusta las cantidades; cada huevo se cobra a precio de cubeta.</p>
+            <div class="mixto-opciones" id="mixto-opciones" role="radiogroup" aria-label="Opciones de panal mixto"></div>
+            <div class="mixto-tipos" id="mixto-tipos"></div>
+            <div class="mixto-pie">
+              <div>
+                <p class="mixto-conteo" id="mixto-conteo" aria-live="polite"></p>
+                <p class="mixto-precio" id="mixto-precio"></p>
+              </div>
+              <button class="boton boton-principal" type="button" id="mixto-agregar" disabled>Agregar panal mixto</button>
+            </div>
+            <p class="aviso-stock" id="mixto-aviso" aria-live="polite"></p>
+          </section>
         </div>
 
         <aside class="tarjeta resumen" aria-labelledby="titulo-resumen">

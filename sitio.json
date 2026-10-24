@@ -13,5 +13,6 @@
     "nota": "Tarifa única de domicilio."
   },
   "permite_recoger": true,
+  "panal_mixto": { "precio_base": "cubeta" },
   "sobre_nosotros": "Somos una granja familiar. Cuidamos a nuestras gallinas y clasificamos cada huevo por peso según la norma técnica colombiana NTC 1240, para que sepas exactamente qué tamaño recibes."
 }

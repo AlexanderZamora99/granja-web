@@ -25,8 +25,11 @@ const estado = {
   tipos: [],            // [{tipo, peso, disponible, precios: {"30": 15000, ...}}]
   actualizado: null,    // Date de la última publicación del catálogo
   presentacion: "30",   // presentación elegida en el catálogo
-  pedido: [],           // [{tipo, presentacion, cantidad}]
+  // [{tipo, presentacion, cantidad}] o, para un panal mixto,
+  // [{mixto: true, composicion: {"Tipo A": 10, ...}, cantidad}]
+  pedido: [],
 };
+const HUEVOS_POR_PANAL = 30;
 
 // ---------------------------------------------------------------
 // Carga de datos
@@ -60,11 +63,118 @@ function disponible(tipo) {
   return typeof d === "number" ? d : Infinity;
 }
 
-function unidadesEnPedido(tipo, ignorarIndice = -1) {
-  return estado.pedido.reduce(
-    (s, i, indice) => (i.tipo === tipo && indice !== ignorarIndice ? s + Number(i.presentacion) * i.cantidad : s),
-    0
-  );
+// ---------------------------------------------------------------
+// Panal mixto
+// ---------------------------------------------------------------
+/** Precio de un huevo dentro del panal mixto: tarifa de cubeta (o de unidad, según sitio.json). */
+function precioHuevoMixto(tipo) {
+  const p = infoTipo(tipo)?.precios || {};
+  if (estado.sitio?.panal_mixto?.precio_base === "unidad") return p["1"];
+  return p[String(HUEVOS_POR_PANAL)] !== undefined ? p[String(HUEVOS_POR_PANAL)] / HUEVOS_POR_PANAL : p["1"];
+}
+
+/** Precio de un panal mixto, redondeado a la centena. */
+function precioMixto(composicion) {
+  const total = Object.entries(composicion).reduce((s, [tipo, n]) => s + (precioHuevoMixto(tipo) || 0) * n, 0);
+  return Math.round(total / 100) * 100;
+}
+
+function textoComposicion(composicion) {
+  return estado.tipos
+    .filter((t) => composicion[t.tipo] > 0)
+    .map((t) => `${composicion[t.tipo]} ${t.tipo}`)
+    .join(", ");
+}
+
+function composicionValida(composicion) {
+  return composicion && typeof composicion === "object"
+    && Object.entries(composicion).every(([tipo, n]) => infoTipo(tipo) && Number.isInteger(n) && n >= 0)
+    && Object.values(composicion).reduce((s, n) => s + n, 0) === HUEVOS_POR_PANAL;
+}
+
+/**
+ * Combinaciones sugeridas de 30 huevos con lo disponible (descontando lo
+ * que ya está en el pedido). Cada una: {nombre, descripcion, composicion, precio}.
+ */
+function opcionesMixto() {
+  const tipos = estado.tipos.filter((t) => precioHuevoMixto(t.tipo) !== undefined && libre(t.tipo) > 0);
+  const totalLibre = tipos.reduce((s, t) => s + Math.min(libre(t.tipo), HUEVOS_POR_PANAL), 0);
+  if (totalLibre < HUEVOS_POR_PANAL) return [];
+
+  const llenar = (orden) => {
+    const comp = {};
+    let falta = HUEVOS_POR_PANAL;
+    for (const t of orden) {
+      const n = Math.min(falta, libre(t.tipo));
+      if (n > 0) comp[t.tipo] = n;
+      falta -= n;
+      if (!falta) break;
+    }
+    return comp;
+  };
+  const repartir = () => {
+    // Reparte por turnos entre todos los tipos disponibles, de a 2 huevos.
+    const comp = {};
+    let falta = HUEVOS_POR_PANAL;
+    while (falta > 0) {
+      let avanzo = false;
+      for (const t of tipos) {
+        const usados = comp[t.tipo] || 0;
+        const n = Math.min(2, falta, libre(t.tipo) - usados);
+        if (n > 0) { comp[t.tipo] = usados + n; falta -= n; avanzo = true; }
+        if (!falta) break;
+      }
+      if (!avanzo) break;
+    }
+    return comp;
+  };
+
+  const candidatas = [
+    { nombre: "Económico", descripcion: "Más huevos pequeños, menor precio", composicion: llenar(tipos) },
+    { nombre: "Equilibrado", descripcion: "Un poco de cada tamaño", composicion: repartir() },
+    { nombre: "Más grande", descripcion: "Los tamaños más grandes disponibles", composicion: llenar([...tipos].reverse()) },
+  ];
+  const vistas = new Set();
+  return candidatas
+    .filter((o) => composicionValida(o.composicion))
+    .filter((o) => {
+      const clave = JSON.stringify(o.composicion);
+      if (vistas.has(clave)) return false;
+      vistas.add(clave);
+      return true;
+    })
+    .map((o) => ({ ...o, precio: precioMixto(o.composicion) }))
+    .sort((a, b) => a.precio - b.precio);
+}
+
+// ---------------------------------------------------------------
+// Unidades del pedido
+// ---------------------------------------------------------------
+function unidadesDeItem(item, tipo) {
+  if (item.mixto) return (item.composicion[tipo] || 0) * item.cantidad;
+  return item.tipo === tipo ? Number(item.presentacion) * item.cantidad : 0;
+}
+
+function valorItem(item) {
+  return item.mixto
+    ? precioMixto(item.composicion) * item.cantidad
+    : precio(item.tipo, item.presentacion) * item.cantidad;
+}
+
+/** {titulo, detalle} legibles para el pedido, el chat y WhatsApp. */
+function describirItem(item) {
+  return item.mixto
+    ? { titulo: `${item.cantidad} × Panal mixto (30 u.)`, detalle: textoComposicion(item.composicion) }
+    : { titulo: `${item.cantidad} × ${item.tipo}`, detalle: etiqueta(item.presentacion) };
+}
+
+function unidadesEnPedido(tipo) {
+  return estado.pedido.reduce((s, i) => s + unidadesDeItem(i, tipo), 0);
+}
+
+/** Huevos de un tipo que aún se pueden agregar al pedido. */
+function libre(tipo) {
+  return disponible(tipo) - unidadesEnPedido(tipo);
 }
 
 /** {clase, texto} para la etiqueta de disponibilidad de un tipo. */
@@ -78,8 +188,8 @@ function estadoStock(tipo) {
 
 /** Cuántos paquetes más de esa presentación caben en lo disponible. */
 function maximoAgregable(tipo, presentacion) {
-  const libre = disponible(tipo) - unidadesEnPedido(tipo);
-  return libre === Infinity ? 99 : Math.max(0, Math.floor(libre / Number(presentacion)));
+  const quedan = libre(tipo);
+  return quedan === Infinity ? 99 : Math.max(0, Math.floor(quedan / Number(presentacion)));
 }
 
 function datosViejos() {
@@ -219,7 +329,9 @@ function leerPedido() {
     const datos = JSON.parse(localStorage.getItem(CLAVE_PEDIDO) || "[]");
     // Descarta productos que ya no existen o cambiaron de presentación.
     return Array.isArray(datos)
-      ? datos.filter((i) => precio(i.tipo, i.presentacion) !== undefined && i.cantidad > 0)
+      ? datos.filter((i) => i.cantidad > 0 && (i.mixto
+          ? composicionValida(i.composicion)
+          : precio(i.tipo, i.presentacion) !== undefined))
       : [];
   } catch (e) {
     return [];
@@ -234,16 +346,16 @@ function agregar(tipo, presentacion, cantidad) {
   const maximo = maximoAgregable(tipo, presentacion);
   const agregados = Math.min(cantidad, maximo);
   if (agregados <= 0) {
-    const libre = Math.max(0, disponible(tipo) - unidadesEnPedido(tipo));
+    const quedan = Math.max(0, libre(tipo));
     return {
       ok: false,
       agregados: 0,
-      mensaje: libre > 0
-        ? `Solo ${libre === 1 ? "queda 1 huevo" : `quedan ${libre} huevos`} ${tipo} disponibles; prueba una presentación más pequeña.`
+      mensaje: quedan > 0
+        ? `Solo ${quedan === 1 ? "queda 1 huevo" : `quedan ${quedan} huevos`} ${tipo} disponibles; prueba una presentación más pequeña.`
         : `No tenemos más huevos ${tipo} disponibles en este momento.`,
     };
   }
-  const existente = estado.pedido.find((i) => i.tipo === tipo && i.presentacion === presentacion);
+  const existente = estado.pedido.find((i) => !i.mixto && i.tipo === tipo && i.presentacion === presentacion);
   if (existente) existente.cantidad += agregados;
   else estado.pedido.push({ tipo, presentacion, cantidad: agregados });
   guardarPedido();
@@ -258,19 +370,43 @@ function agregar(tipo, presentacion, cantidad) {
   };
 }
 
+/** Agrega un panal mixto de 30 huevos. Devuelve {ok, mensaje}. */
+function agregarMixto(composicion) {
+  const comp = Object.fromEntries(Object.entries(composicion).filter(([, n]) => n > 0));
+  if (!composicionValida(comp)) {
+    return { ok: false, mensaje: `El panal debe tener exactamente ${HUEVOS_POR_PANAL} huevos.` };
+  }
+  const sinStock = Object.entries(comp).filter(([tipo, n]) => n > libre(tipo)).map(([tipo]) => tipo);
+  if (sinStock.length) {
+    return { ok: false, mensaje: `No hay suficientes huevos ${sinStock.join(", ")} para ese panal.` };
+  }
+  const clave = JSON.stringify(comp);
+  const existente = estado.pedido.find((i) => i.mixto && JSON.stringify(i.composicion) === clave);
+  if (existente) existente.cantidad += 1;
+  else estado.pedido.push({ mixto: true, composicion: comp, cantidad: 1 });
+  guardarPedido();
+  pintarPedido();
+  pintarProductos();
+  return { ok: true, mensaje: "" };
+}
+
 function entregaADomicilio() {
   return document.querySelector('input[name="entrega"]:checked')?.value !== "recoger";
 }
 
 function calcular() {
-  const subtotal = estado.pedido.reduce((s, i) => s + precio(i.tipo, i.presentacion) * i.cantidad, 0);
+  const subtotal = estado.pedido.reduce((s, i) => s + valorItem(i), 0);
   const domicilio = estado.pedido.length && entregaADomicilio() ? estado.sitio.domicilio?.valor || 0 : 0;
   return { subtotal, domicilio, total: subtotal + domicilio };
 }
 
 /** Tipos cuyo pedido supera lo disponible (p. ej. un carrito guardado de otro día). */
 function tiposExcedidos() {
-  return [...new Set(estado.pedido.map((i) => i.tipo))].filter((t) => unidadesEnPedido(t) > disponible(t));
+  return estado.tipos.map((t) => t.tipo).filter((t) => unidadesEnPedido(t) > disponible(t));
+}
+
+function itemExcede(item, excedidos) {
+  return excedidos.some((tipo) => unidadesDeItem(item, tipo) > 0);
 }
 
 function pintarPedido() {
@@ -279,25 +415,25 @@ function pintarPedido() {
   const excedidos = tiposExcedidos();
   estado.pedido.forEach((item, indice) => {
     const li = document.createElement("li");
-    li.className = "item-pedido" + (excedidos.includes(item.tipo) ? " item-excede" : "");
+    const excede = itemExcede(item, excedidos);
+    const { titulo, detalle } = describirItem(item);
+    li.className = "item-pedido" + (excede ? " item-excede" : "");
     const desc = document.createElement("div");
     const nombre = document.createElement("strong");
-    nombre.textContent = `${item.cantidad} × ${item.tipo}`;
+    nombre.textContent = titulo;
     const det = document.createElement("div");
     det.className = "item-detalle";
-    det.textContent = excedidos.includes(item.tipo)
-      ? `${etiqueta(item.presentacion)} · supera lo disponible (${Math.max(0, disponible(item.tipo))} huevos)`
-      : etiqueta(item.presentacion);
+    det.textContent = excede ? `${detalle} · supera lo disponible` : detalle;
     desc.append(nombre, det);
 
     const pr = document.createElement("span");
     pr.className = "item-precio";
-    pr.textContent = cop(precio(item.tipo, item.presentacion) * item.cantidad);
+    pr.textContent = cop(valorItem(item));
 
     const quitar = document.createElement("button");
     quitar.type = "button";
     quitar.className = "boton-icono quitar";
-    quitar.setAttribute("aria-label", `Quitar ${item.tipo} ${etiqueta(item.presentacion)}`);
+    quitar.setAttribute("aria-label", `Quitar ${titulo}`);
     quitar.textContent = "×";
     quitar.addEventListener("click", () => {
       estado.pedido.splice(indice, 1);
@@ -340,9 +476,12 @@ function mensajeWhatsApp() {
   const lineas = [
     `Hola ${estado.sitio.nombre}, quiero hacer un pedido:`,
     "",
-    ...estado.pedido.map(
-      (i) => `• ${i.cantidad} × ${i.tipo} – ${etiqueta(i.presentacion)}: ${cop(precio(i.tipo, i.presentacion) * i.cantidad)}`
-    ),
+    ...estado.pedido.flatMap((i) => {
+      const { titulo, detalle } = describirItem(i);
+      return i.mixto
+        ? [`• ${titulo}: ${cop(valorItem(i))}`, `   Armar cada panal con: ${detalle}`]
+        : [`• ${titulo} – ${detalle}: ${cop(valorItem(i))}`];
+    }),
     "",
     `Subtotal: ${cop(subtotal)}`,
     dom ? `Domicilio: ${cop(domicilio)}` : "Recojo en la granja",
@@ -418,7 +557,9 @@ function prepararTema() {
 // Interfaz para el asistente de ventas (chat.js).
 window.Tienda = {
   estado, cop, etiqueta, precio, disponible, estadoStock, agregar, calcular,
-  numeroWhatsApp, datosViejos, maximoAgregable, unidadesEnPedido,
+  numeroWhatsApp, datosViejos, maximoAgregable, unidadesEnPedido, libre,
+  agregarMixto, opcionesMixto, precioMixto, precioHuevoMixto, textoComposicion,
+  describirItem, valorItem, HUEVOS_POR_PANAL,
   irAlPedido() {
     $("#pedido").scrollIntoView({ behavior: "smooth" });
     setTimeout(() => $("#cliente-nombre").focus({ preventScroll: true }), 500);

@@ -118,6 +118,7 @@
     }
     ofrecer([
       { texto: "¿Qué tamaño me conviene?", accion: preguntarUso },
+      { texto: "Armar panal mixto", accion: panalMixto },
       { texto: "¿Qué hay disponible?", accion: disponibilidad },
       { texto: "Precios", accion: precios },
       { texto: "Domicilio y ubicación", accion: domicilio },
@@ -232,6 +233,54 @@
     ]);
   }
 
+  function panalMixto() {
+    const t = T();
+    const opciones = t.opcionesMixto();
+    if (!opciones.length) {
+      decir("Hoy no tengo huevos suficientes para armar un panal mixto de 30 😕.");
+      ofrecer([{ texto: "¿Qué hay disponible?", accion: disponibilidad }, chipPersona(), volverAlMenu]);
+      return;
+    }
+    decir(
+      "Un panal mixto trae 30 huevos de varios tamaños y cada huevo se cobra a precio de cubeta. Elige el que más te convenga:",
+      ...opciones.map((o) => `• **${o.nombre}** – ${t.cop(o.precio)}: ${t.textoComposicion(o.composicion)}`),
+    );
+    ofrecer([
+      ...opciones.map((o) => ({
+        texto: `${o.nombre} · ${t.cop(o.precio)}`,
+        accion: () => agregarPanal(o),
+      })),
+      { texto: "Armarlo a mi gusto", accion: personalizarPanal },
+      volverAlMenu,
+    ]);
+  }
+
+  function agregarPanal(opcion) {
+    const t = T();
+    const r = t.agregarMixto(opcion.composicion);
+    if (!r.ok) {
+      decir(r.mensaje);
+      ofrecer([{ texto: "Ver otras opciones", accion: panalMixto }, volverAlMenu]);
+      return;
+    }
+    decir(
+      `¡Listo! ✅ Agregué un panal mixto **${opcion.nombre}** (${t.textoComposicion(opcion.composicion)}).`,
+      `Tu pedido va en **${t.cop(t.calcular().total)}** con domicilio incluido.`,
+    );
+    ofrecer([
+      { texto: "Finalizar pedido", accion: finalizar },
+      { texto: "Otro panal mixto", accion: panalMixto },
+      { texto: "Ver mi pedido", accion: verPedido },
+    ]);
+  }
+
+  function personalizarPanal() {
+    decir("Te llevo al armador: ajusta cuántos huevos de cada tipo quieres hasta completar 30 y pulsa **Agregar panal mixto**.");
+    ofrecer([volverAlMenu]);
+    if (matchMedia("(max-width: 640px)").matches) cerrar();
+    document.querySelector("#mixto").scrollIntoView({ behavior: "smooth" });
+  }
+
   function finalizar() {
     decir("Perfecto 🙌. Escribe tu nombre y dirección en el formulario y pulsa **Enviar pedido por WhatsApp**.",
           "Ahí confirmamos tu pedido y la hora de entrega.");
@@ -250,7 +299,10 @@
     const { subtotal, domicilio: dom, total } = t.calcular();
     decir(
       "Tu pedido:",
-      ...t.estado.pedido.map((i) => `• ${i.cantidad} × ${i.tipo} – ${t.etiqueta(i.presentacion)}`),
+      ...t.estado.pedido.map((i) => {
+        const { titulo, detalle } = t.describirItem(i);
+        return `• ${titulo} – ${detalle}`;
+      }),
       `Subtotal ${t.cop(subtotal)} · Domicilio ${t.cop(dom)}`,
       `**Total ${t.cop(total)}**`,
     );
@@ -356,6 +408,8 @@
     const presentacion = detectarPresentacion(txt);
     const esPregunta = /\?|cuanto|precio|vale|cuesta|valor|hay|tienen/.test(txt);
 
+    // Antes que "cubeta/panal + tipo": "panal mixto de AA y B" no es una cubeta AA.
+    if (/mixt|surtid|combinad|varios tamanos|de todo/.test(txt)) return panalMixto();
     if (tipo && presentacion && !esPregunta) {
       if (T().precio(tipo, presentacion) === undefined) {
         decir(`No manejo ${T().etiqueta(presentacion)} en ${tipo}.`);
