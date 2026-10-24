@@ -58,6 +58,10 @@ function pintarSitio() {
     const v = valores[el.dataset.campo];
     if (v) el.textContent = v;
   });
+  // Filas opcionales: se ocultan si el dato está vacío en sitio.json.
+  document.querySelectorAll("[data-si-hay]").forEach((el) => {
+    el.hidden = !String(s[el.dataset.siHay] || "").trim();
+  });
   document.title = `${s.nombre} · Huevos frescos`;
   $("#anio").textContent = new Date().getFullYear();
 
