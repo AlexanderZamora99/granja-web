@@ -11,6 +11,10 @@
   --sobre-primario: #ffffff;
   --acento: #b45309;
   --acento-fondo: #fef3c7;
+  --ok: #15803d;
+  --ok-fondo: #dcfce7;
+  --error: #b91c1c;
+  --error-fondo: #fee2e2;
   --whatsapp: #128c4a;
   --sombra: 0 1px 2px rgb(15 23 42 / 6%), 0 8px 24px rgb(15 23 42 / 6%);
   --radio: 12px;
@@ -29,6 +33,10 @@
     --primario-hover: #3b82f6;
     --acento: #fbbf24;
     --acento-fondo: #2a2208;
+    --ok: #4ade80;
+    --ok-fondo: #0c2a17;
+    --error: #f87171;
+    --error-fondo: #2d0f0f;
     --whatsapp: #15803d;
     --sombra: none;
     color-scheme: dark;
@@ -46,6 +54,10 @@
   --primario-hover: #3b82f6;
   --acento: #fbbf24;
   --acento-fondo: #2a2208;
+  --ok: #4ade80;
+  --ok-fondo: #0c2a17;
+  --error: #f87171;
+  --error-fondo: #2d0f0f;
   --whatsapp: #15803d;
   --sombra: none;
   color-scheme: dark;
@@ -206,13 +218,86 @@ input:focus, select:focus { border-color: var(--primario); outline: none; box-sh
 .info { margin: 0; display: grid; gap: 14px; }
 .info dt { font-weight: 600; }
 .info dd { margin: 0; color: var(--texto-suave); }
+.mapa { padding: 0; overflow: hidden; display: grid; }
+@media (min-width: 900px) { .mapa { grid-column: 1 / -1; } }
+.mapa iframe { width: 100%; height: 320px; border: 0; display: block; }
+.mapa .boton { border-radius: 0; }
+
+/* ---------- Disponibilidad ---------- */
+.stock {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
+  margin: 6px 0 0; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+}
+.stock::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.stock-si { color: var(--ok); background: var(--ok-fondo); }
+.stock-poco { color: var(--acento); background: var(--acento-fondo); }
+.stock-no { color: var(--error); background: var(--error-fondo); }
+.producto.agotado .producto-precio { opacity: .55; }
+.aviso-stock { color: var(--error); font-size: .9rem; margin: 0; }
+.item-excede .item-detalle { color: var(--error); }
 
 /* ---------- Pie y flotante ---------- */
 .pie { padding: 24px 0 96px; color: var(--texto-suave); font-size: .9rem; }
 .flotante {
-  position: fixed; right: 16px; bottom: 16px; z-index: 15;
+  position: fixed; left: 16px; bottom: 16px; z-index: 15;
   display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px;
   border-radius: 999px; background: var(--primario); color: var(--sobre-primario);
   font-weight: 700; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
 }
 .flotante[hidden] { display: none; }
+
+.formulario-agregar .aviso-stock { grid-column: 1 / -1; }
+.formulario-agregar .aviso-stock:empty { display: none; }
+
+/* ---------- Asistente de ventas ---------- */
+.chat-lanzador {
+  position: fixed; right: 16px; bottom: 16px; z-index: 16;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 18px;
+  border: 0; border-radius: 999px; background: var(--primario); color: var(--sobre-primario);
+  font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+}
+.chat-lanzador:hover { background: var(--primario-hover); }
+.chat-lanzador span:first-child { font-size: 1.25rem; }
+@media (max-width: 380px) { .chat-lanzador-texto { display: none; } }
+
+.chat-burbuja {
+  position: fixed; right: 16px; bottom: 78px; z-index: 16; max-width: 240px;
+  padding: 10px 14px; border-radius: 14px 14px 4px 14px;
+  border: 1px solid var(--borde); background: var(--superficie); color: var(--texto);
+  font: inherit; font-size: .95rem; text-align: left; cursor: pointer; box-shadow: var(--sombra);
+}
+
+.chat-panel {
+  position: fixed; z-index: 30; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--superficie); color: var(--texto);
+}
+@media (min-width: 641px) {
+  .chat-panel {
+    inset: auto 16px 80px auto; width: 380px; height: min(600px, calc(100vh - 110px));
+    border: 1px solid var(--borde); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 16px 48px rgb(0 0 0 / 30%);
+  }
+}
+.chat-panel[hidden] { display: none; }
+
+.chat-cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; background: var(--primario); color: var(--sobre-primario);
+}
+.chat-cabecera div { display: grid; }
+.chat-estado { font-size: .8rem; opacity: .85; }
+.chat-cabecera .boton-icono { background: transparent; border-color: rgb(255 255 255 / 35%); color: inherit; }
+
+.chat-mensajes { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--fondo); }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: .95rem; line-height: 1.45; overflow-wrap: anywhere; }
+.msg-bot { align-self: flex-start; background: var(--superficie); border: 1px solid var(--borde); border-bottom-left-radius: 4px; }
+.msg-usuario { align-self: flex-end; background: var(--primario); color: var(--sobre-primario); border-bottom-right-radius: 4px; }
+
+.chat-opciones { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--borde); background: var(--superficie); }
+.chat-opciones:empty { display: none; }
+.chip-chat { min-height: 36px; display: inline-flex; align-items: center; text-decoration: none; font-size: .9rem; }
+.chip-chat:hover { border-color: var(--primario); }
+
+.chat-form { display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--borde); background: var(--superficie); }
+.chat-form .boton { min-height: 44px; padding: 0 14px; }

@@ -16,6 +16,7 @@
     } catch (e) {}
   </script>
   <script src="app.js" defer></script>
+  <script src="chat.js" defer></script>
 </head>
 <body>
   <a class="saltar" href="#catalogo">Ir al catálogo</a>
@@ -91,6 +92,7 @@
               </div>
             </label>
             <button class="boton boton-principal" type="submit">Agregar al pedido</button>
+            <p class="aviso-stock" id="aviso-agregar" aria-live="polite"></p>
           </form>
         </div>
 
@@ -145,6 +147,10 @@
           <div id="fila-direccion"><dt>Dirección</dt><dd><span data-campo="direccion"></span> <a id="enlace-mapa" target="_blank" rel="noopener">Ver en el mapa</a></dd></div>
           <div id="fila-whatsapp"><dt>WhatsApp</dt><dd><a id="enlace-whatsapp" target="_blank" rel="noopener"></a></dd></div>
         </dl>
+        <div class="mapa tarjeta" id="bloque-mapa" hidden>
+          <iframe id="mapa" title="Ubicación de la granja en el mapa" loading="lazy" referrerpolicy="no-referrer"></iframe>
+          <a class="boton boton-principal" id="como-llegar" target="_blank" rel="noopener">Cómo llegar</a>
+        </div>
       </div>
     </section>
   </main>

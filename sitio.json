@@ -6,7 +6,8 @@
   "zona_entrega": "",
   "horario": "",
   "direccion": "Corregimiento de Nariño, callejón El Limar #25-77, Tuluá, Valle del Cauca",
-  "mapa_url": "https://www.google.com/maps/search/?api=1&query=Corregimiento+de+Nari%C3%B1o+callej%C3%B3n+El+Limar+25-77+Tulu%C3%A1+Valle+del+Cauca",
+  "coordenadas": { "lat": 4.098417, "lon": -76.238389 },
+  "mapa_url": "https://www.google.com/maps/search/?api=1&query=4.098417,-76.238389",
   "domicilio": {
     "valor": 2000,
     "nota": "Tarifa única de domicilio."
