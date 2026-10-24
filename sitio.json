@@ -1,0 +1,16 @@
+{
+  "nombre": "Nombre de tu granja",
+  "eslogan": "Huevos frescos, recogidos cada mañana y clasificados por tamaño.",
+  "whatsapp": "",
+  "ciudad": "Tu ciudad",
+  "zona_entrega": "Escribe aquí los barrios o veredas donde entregas",
+  "horario": "Lunes a sábado, 7:00 a. m. – 6:00 p. m.",
+  "direccion": "",
+  "mapa_url": "",
+  "domicilio": {
+    "valor": 5000,
+    "nota": "Tarifa única de domicilio dentro de la zona de entrega."
+  },
+  "permite_recoger": true,
+  "sobre_nosotros": "Somos una granja familiar. Cuidamos a nuestras gallinas y clasificamos cada huevo por peso según la norma técnica colombiana NTC 1240, para que sepas exactamente qué tamaño recibes."
+}

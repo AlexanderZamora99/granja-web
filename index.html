@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huevos frescos</title>
+  <meta name="description" content="Huevos frescos clasificados por tamaño. Consulta precios y haz tu pedido por WhatsApp.">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥚</text></svg>">
+  <link rel="stylesheet" href="estilos.css">
+  <script>
+    // Aplica el tema guardado antes de pintar, para evitar parpadeos.
+    try {
+      const t = localStorage.getItem("tema");
+      if (t === "claro" || t === "oscuro") document.documentElement.dataset.tema = t;
+    } catch (e) {}
+  </script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="saltar" href="#catalogo">Ir al catálogo</a>
+
+  <header class="barra">
+    <div class="contenedor barra-interior">
+      <a class="marca" href="#inicio" aria-label="Inicio">
+        <span class="marca-icono" aria-hidden="true">🥚</span>
+        <span data-campo="nombre">Huevos frescos</span>
+      </a>
+      <nav class="menu" aria-label="Secciones">
+        <a href="#catalogo">Catálogo</a>
+        <a href="#pedido">Pedido</a>
+        <a href="#nosotros">Nosotros</a>
+      </nav>
+      <button class="boton-icono" id="cambiar-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
+        <svg class="icono-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>
+        <svg class="icono-luna" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="portada">
+      <div class="contenedor portada-interior">
+        <p class="etiqueta">Directo de la granja</p>
+        <h1 data-campo="nombre">Huevos frescos</h1>
+        <p class="portada-texto" data-campo="eslogan"></p>
+        <div class="acciones">
+          <a class="boton boton-principal" href="#pedido">Armar mi pedido</a>
+          <a class="boton boton-secundario" href="#catalogo">Ver precios</a>
+        </div>
+        <ul class="datos-rapidos">
+          <li><span aria-hidden="true">📍</span> <span data-campo="ciudad"></span></li>
+          <li><span aria-hidden="true">🕒</span> <span data-campo="horario"></span></li>
+          <li><span aria-hidden="true">🛵</span> Domicilio <strong data-campo="domicilio_valor"></strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="catalogo" class="seccion">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <h2>Catálogo y precios</h2>
+          <p class="nota" id="precios-actualizados"></p>
+        </div>
+        <div class="selector-presentacion" role="radiogroup" aria-label="Presentación" id="presentaciones"></div>
+        <div class="rejilla-productos" id="productos" aria-live="polite">
+          <p class="cargando">Cargando precios…</p>
+        </div>
+        <p class="nota">Clasificamos por peso según la norma NTC 1240. Precios en pesos colombianos (COP).</p>
+      </div>
+    </section>
+
+    <section id="pedido" class="seccion seccion-alterna">
+      <div class="contenedor pedido">
+        <div class="pedido-armar">
+          <h2>Arma tu pedido</h2>
+          <p class="nota">Elige tipo, presentación y cantidad. Te mostramos el total con domicilio antes de enviarlo.</p>
+
+          <form id="form-agregar" class="tarjeta formulario-agregar">
+            <label>Tipo de huevo
+              <select id="agregar-tipo" required></select>
+            </label>
+            <label>Presentación
+              <select id="agregar-presentacion" required></select>
+            </label>
+            <label>Cantidad
+              <div class="contador">
+                <button type="button" class="boton-icono" data-paso="-1" aria-label="Restar uno">−</button>
+                <input id="agregar-cantidad" type="number" inputmode="numeric" min="1" max="99" value="1" required>
+                <button type="button" class="boton-icono" data-paso="1" aria-label="Sumar uno">+</button>
+              </div>
+            </label>
+            <button class="boton boton-principal" type="submit">Agregar al pedido</button>
+          </form>
+        </div>
+
+        <aside class="tarjeta resumen" aria-labelledby="titulo-resumen">
+          <h3 id="titulo-resumen">Tu pedido</h3>
+          <ul class="lista-pedido" id="lista-pedido"></ul>
+          <p class="vacio" id="pedido-vacio">Aún no has agregado productos.</p>
+
+          <fieldset class="entrega" id="entrega">
+            <legend>Entrega</legend>
+            <label class="opcion"><input type="radio" name="entrega" value="domicilio" checked> Domicilio <span data-campo="domicilio_valor"></span></label>
+            <label class="opcion" id="opcion-recoger"><input type="radio" name="entrega" value="recoger"> Recoger en la granja (gratis)</label>
+          </fieldset>
+
+          <dl class="totales">
+            <div><dt>Subtotal</dt><dd id="subtotal">$ 0</dd></div>
+            <div><dt>Domicilio</dt><dd id="costo-domicilio">$ 0</dd></div>
+            <div class="total"><dt>Total estimado</dt><dd id="total">$ 0</dd></div>
+          </dl>
+
+          <form id="form-enviar" class="datos-cliente">
+            <label>Tu nombre
+              <input id="cliente-nombre" autocomplete="name" required maxlength="60">
+            </label>
+            <label id="campo-direccion">Dirección de entrega
+              <input id="cliente-direccion" autocomplete="street-address" maxlength="120">
+            </label>
+            <label>Nota (opcional)
+              <input id="cliente-nota" maxlength="140" placeholder="Ej.: llamar al llegar">
+            </label>
+            <button class="boton boton-whatsapp" type="submit" id="boton-enviar" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
+              Enviar pedido por WhatsApp
+            </button>
+            <p class="nota" id="aviso-envio" aria-live="polite"></p>
+          </form>
+          <p class="nota">El total es una simulación. Confirmamos disponibilidad y valor final por WhatsApp; no se cobra nada en esta página.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="nosotros" class="seccion">
+      <div class="contenedor nosotros">
+        <div>
+          <h2>Nosotros</h2>
+          <p data-campo="sobre_nosotros"></p>
+        </div>
+        <dl class="tarjeta info">
+          <div><dt>Horario</dt><dd data-campo="horario"></dd></div>
+          <div><dt>Zona de entrega</dt><dd data-campo="zona_entrega"></dd></div>
+          <div><dt>Domicilio</dt><dd><span data-campo="domicilio_valor"></span> · <span data-campo="domicilio_nota"></span></dd></div>
+          <div id="fila-direccion"><dt>Dirección</dt><dd><span data-campo="direccion"></span> <a id="enlace-mapa" target="_blank" rel="noopener">Ver en el mapa</a></dd></div>
+          <div id="fila-whatsapp"><dt>WhatsApp</dt><dd><a id="enlace-whatsapp" target="_blank" rel="noopener"></a></dd></div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>© <span id="anio"></span> <span data-campo="nombre"></span></p>
+    </div>
+  </footer>
+
+  <a class="flotante" id="flotante" href="#pedido" aria-label="Ver mi pedido" hidden>
+    🧺 <span id="flotante-total"></span>
+  </a>
+</body>
+</html>
