@@ -1,0 +1,46 @@
+{
+  "fotos": [
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-24-21-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-24-21-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Gallinas sanas, de cresta roja y plumaje completo."
+    },
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-23-54-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-23-54-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Recolección del día: huevos frescos junto a nuestras gallinas."
+    },
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-26-59-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-26-59-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Alimento balanceado complementado con zanahoria fresca."
+    },
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-24-37-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-24-37-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Galpón con perchas de guadua, bebederos y comederos."
+    },
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-25-04-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-25-04-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Espacio para moverse y escarbar sobre cama de viruta."
+    },
+    {
+      "grande": "fotos/whatsapp-image-2026-10-24-at-11-26-30-am.webp",
+      "miniatura": "fotos/whatsapp-image-2026-10-24-at-11-26-30-am-min.webp",
+      "ancho": 900,
+      "alto": 1600,
+      "texto": "Siempre con agua limpia a su alcance."
+    }
+  ]
+}
