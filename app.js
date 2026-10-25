@@ -40,6 +40,23 @@ async function cargarJSON(ruta) {
   return r.json();
 }
 
+/**
+ * Catálogo con precios y disponibilidad. Se lee también directo del
+ * repositorio (sitio.json > fuente_precios): así el stock se actualiza
+ * sin volver a publicar la página, y el hosting no gasta publicaciones.
+ * Se usa la copia más reciente entre la remota y la local.
+ */
+async function cargarPrecios() {
+  const fuente = estado.sitio?.fuente_precios;
+  const intentos = [cargarJSON("precios.json")];
+  if (fuente) intentos.push(cargarJSON(`${fuente}?t=${Date.now()}`));
+  const resultados = (await Promise.allSettled(intentos))
+    .filter((r) => r.status === "fulfilled" && Array.isArray(r.value?.tipos))
+    .map((r) => r.value);
+  if (!resultados.length) throw new Error("No se pudo cargar el catálogo");
+  return resultados.sort((a, b) => new Date(b.actualizado || 0) - new Date(a.actualizado || 0))[0];
+}
+
 function numeroWhatsApp(valor) {
   const digitos = String(valor || "").replace(/\D/g, "");
   if (!digitos) return "";
@@ -369,7 +386,7 @@ const INTERVALO_REFRESCO_MS = 2 * 60 * 1000;
 async function refrescarCatalogo() {
   let precios;
   try {
-    precios = await cargarJSON("precios.json");
+    precios = await cargarPrecios();
   } catch (e) {
     return; // sin conexión: se reintenta en el siguiente ciclo
   }
@@ -659,8 +676,8 @@ window.Tienda = {
 async function iniciar() {
   prepararTema();
   try {
-    const [sitio, precios] = await Promise.all([cargarJSON("sitio.json"), cargarJSON("precios.json")]);
-    estado.sitio = sitio;
+    estado.sitio = await cargarJSON("sitio.json");
+    const precios = await cargarPrecios();
     estado.tipos = precios.tipos;
     const disp = presentacionesDisponibles();
     if (!disp.includes(estado.presentacion)) estado.presentacion = disp[0];
