@@ -285,10 +285,19 @@ function pintarProductos() {
     peso.textContent = t.peso;
     art.append(h, peso);
 
-    if (stock) {
+    // La etiqueta descuenta lo que el cliente ya tiene en su pedido.
+    const enPedido = unidadesEnPedido(t.tipo);
+    const quedan = Math.max(0, libre(t.tipo));
+    const etiquetaInfo = enPedido > 0 && stock
+      ? {
+          clase: quedan === 0 ? "stock-poco" : quedan < POCAS_UNIDADES ? "stock-poco" : "stock-si",
+          texto: `${enPedido} en tu pedido · ${quedan === 0 ? "no quedan más" : `quedan ${quedan}`}`,
+        }
+      : stock;
+    if (etiquetaInfo) {
       const etiquetaStock = document.createElement("span");
-      etiquetaStock.className = `stock ${stock.clase}`;
-      etiquetaStock.textContent = stock.texto;
+      etiquetaStock.className = `stock ${etiquetaInfo.clase}`;
+      etiquetaStock.textContent = etiquetaInfo.texto;
       art.append(etiquetaStock);
     }
 
@@ -299,22 +308,89 @@ function pintarProductos() {
     unidad.className = "producto-unidad";
     unidad.textContent = `${etiqueta(estado.presentacion)} · ${cop(valor / Number(estado.presentacion))} por huevo`;
 
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "boton boton-secundario";
-    const puede = maximoAgregable(t.tipo, estado.presentacion) > 0;
-    b.textContent = puede ? "Agregar al pedido" : (stock?.clase === "stock-no" ? "Agotado" : "Sin unidades suficientes");
-    b.disabled = !puede;
-    b.addEventListener("click", () => {
-      if (agregar(t.tipo, estado.presentacion, 1).ok) {
-        b.textContent = "Agregado ✓";
-        setTimeout(pintarProductos, 1200);
-      }
-    });
-
-    art.append(pr, unidad, b);
+    art.append(pr, unidad, botonProducto(t, quedan, enPedido));
     cont.append(art);
   });
+}
+
+/**
+ * Botón de la tarjeta. Nunca deja al cliente sin salida:
+ * agregar, cambiar a una presentación que sí alcanza, o ir a su pedido.
+ */
+function botonProducto(t, quedan, enPedido) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "boton boton-secundario";
+  const recien = estado.recienAgregado;
+  if (recien?.tipo === t.tipo && Date.now() < recien.hasta) {
+    // Confirmación breve; luego se muestra la siguiente acción posible.
+    b.textContent = "Agregado ✓";
+    b.disabled = true;
+    return b;
+  }
+
+  if (maximoAgregable(t.tipo, estado.presentacion) > 0) {
+    b.textContent = "Agregar al pedido";
+    b.addEventListener("click", () => {
+      if (agregar(t.tipo, estado.presentacion, 1).ok) {
+        estado.recienAgregado = { tipo: t.tipo, hasta: Date.now() + 1200 };
+        pintarProductos();
+        setTimeout(pintarProductos, 1300);
+      }
+    });
+    return b;
+  }
+
+  const alcanza = Object.keys(t.precios)
+    .filter((p) => Number(p) <= quedan)
+    .sort((a, b2) => b2 - a)[0];
+  if (alcanza) {
+    b.textContent = `Quedan ${quedan}: ver ${etiqueta(alcanza).toLowerCase()}`;
+    b.addEventListener("click", () => {
+      estado.presentacion = alcanza;
+      pintarPresentaciones();
+      pintarProductos();
+    });
+  } else if (enPedido > 0) {
+    b.textContent = "Ya están en tu pedido · ver pedido";
+    b.addEventListener("click", () => $("#pedido").scrollIntoView({ behavior: "smooth" }));
+  } else {
+    b.textContent = "Agotado";
+    b.disabled = true;
+  }
+  return b;
+}
+
+// ---------------------------------------------------------------
+// Actualización de la disponibilidad mientras la página está abierta
+// ---------------------------------------------------------------
+const INTERVALO_REFRESCO_MS = 2 * 60 * 1000;
+
+async function refrescarCatalogo() {
+  let precios;
+  try {
+    precios = await cargarJSON("precios.json");
+  } catch (e) {
+    return; // sin conexión: se reintenta en el siguiente ciclo
+  }
+  if (!precios.actualizado || estado.actualizado?.toISOString() === new Date(precios.actualizado).toISOString()) return;
+  estado.tipos = precios.tipos;
+  estado.actualizado = new Date(precios.actualizado);
+  pintarFechaCatalogo();
+  pintarPresentaciones();
+  pintarProductos();
+  pintarSelectorTipos();
+  pintarPedido();   // marca lo que ya no alcance y avisa al mixto y al chat
+}
+
+function pintarFechaCatalogo() {
+  if (!estado.actualizado) return;
+  const fecha = estado.actualizado.toLocaleString("es-CO", {
+    day: "numeric", month: "long", hour: "numeric", minute: "2-digit",
+  });
+  $("#precios-actualizados").textContent = datosViejos()
+    ? `Disponibilidad del ${fecha}. Puede haber cambiado; la confirmamos por WhatsApp.`
+    : `Precios y disponibilidad actualizados el ${fecha}`;
 }
 
 // ---------------------------------------------------------------
@@ -498,25 +574,36 @@ function mensajeWhatsApp() {
 // ---------------------------------------------------------------
 // Formularios y tema
 // ---------------------------------------------------------------
-function prepararFormularios() {
-  const selTipo = $("#agregar-tipo");
+function llenarPresentacionesForm() {
   const selPres = $("#agregar-presentacion");
+  const anterior = selPres.value;
+  const t = infoTipo($("#agregar-tipo").value);
+  const opciones = Object.keys(t?.precios || {}).sort((a, b) => b - a);
+  selPres.replaceChildren(...opciones.map((p) => new Option(`${etiqueta(p)} · ${cop(t.precios[p])}`, p)));
+  if (opciones.includes(anterior)) selPres.value = anterior;
+}
+
+/** Llena el selector de tipos; conserva la elección si sigue disponible. */
+function pintarSelectorTipos() {
+  const selTipo = $("#agregar-tipo");
+  const anterior = selTipo.value;
   selTipo.replaceChildren(...estado.tipos.map((t) => {
     const agotado = disponible(t.tipo) <= 0;
     const op = new Option(`${t.tipo} (${t.peso})${agotado ? " – agotado" : ""}`, t.tipo);
     op.disabled = agotado;
     return op;
   }));
-  const primero = estado.tipos.find((t) => disponible(t.tipo) > 0);
+  const sigue = estado.tipos.find((t) => t.tipo === anterior && disponible(t.tipo) > 0);
+  const primero = sigue || estado.tipos.find((t) => disponible(t.tipo) > 0);
   if (primero) selTipo.value = primero.tipo;
+  llenarPresentacionesForm();
+}
 
-  const llenarPresentaciones = () => {
-    const t = infoTipo(selTipo.value);
-    const opciones = Object.keys(t?.precios || {}).sort((a, b) => b - a);
-    selPres.replaceChildren(...opciones.map((p) => new Option(`${etiqueta(p)} · ${cop(t.precios[p])}`, p)));
-  };
-  selTipo.addEventListener("change", llenarPresentaciones);
-  llenarPresentaciones();
+function prepararFormularios() {
+  const selTipo = $("#agregar-tipo");
+  const selPres = $("#agregar-presentacion");
+  pintarSelectorTipos();
+  selTipo.addEventListener("change", llenarPresentacionesForm);
 
   const cantidad = $("#agregar-cantidad");
   document.querySelectorAll("[data-paso]").forEach((b) =>
@@ -578,15 +665,8 @@ async function iniciar() {
     const disp = presentacionesDisponibles();
     if (!disp.includes(estado.presentacion)) estado.presentacion = disp[0];
 
-    if (precios.actualizado) {
-      estado.actualizado = new Date(precios.actualizado);
-      const fecha = estado.actualizado.toLocaleString("es-CO", {
-        day: "numeric", month: "long", hour: "numeric", minute: "2-digit",
-      });
-      $("#precios-actualizados").textContent = datosViejos()
-        ? `Disponibilidad del ${fecha}. Puede haber cambiado; la confirmamos por WhatsApp.`
-        : `Precios y disponibilidad actualizados el ${fecha}`;
-    }
+    if (precios.actualizado) estado.actualizado = new Date(precios.actualizado);
+    pintarFechaCatalogo();
 
     pintarSitio();
     pintarPresentaciones();
@@ -595,6 +675,12 @@ async function iniciar() {
     prepararFormularios();
     pintarPedido();
     document.dispatchEvent(new CustomEvent("tienda:lista"));
+
+    // Mantiene la disponibilidad al día sin recargar la página.
+    setInterval(refrescarCatalogo, INTERVALO_REFRESCO_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") refrescarCatalogo();
+    });
   } catch (error) {
     console.error(error);
     $("#productos").innerHTML = '<p class="error-carga">No pudimos cargar los precios. Recarga la página en un momento.</p>';
