@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-25T14:57:36-05:00",
+  "actualizado": "2026-10-26T12:45:09-05:00",
   "moneda": "COP",
   "tipos": [
     {
@@ -19,7 +19,7 @@
     {
       "tipo": "Tipo B",
       "peso": "46 – 52,9 g",
-      "disponible": 3,
+      "disponible": 6,
       "precios": {
         "30": 14000,
         "20": 9700,
@@ -33,7 +33,7 @@
     {
       "tipo": "Tipo A",
       "peso": "53 – 59,9 g",
-      "disponible": 8,
+      "disponible": 13,
       "precios": {
         "30": 15000,
         "20": 10700,
@@ -47,7 +47,7 @@
     {
       "tipo": "Tipo AA",
       "peso": "60 – 66,9 g",
-      "disponible": 4,
+      "disponible": 6,
       "precios": {
         "30": 21000,
         "20": 13000,
@@ -61,7 +61,7 @@
     {
       "tipo": "Tipo AAA",
       "peso": "67 – 77,9 g",
-      "disponible": 0,
+      "disponible": 1,
       "precios": {
         "30": 23500,
         "20": 15700,
