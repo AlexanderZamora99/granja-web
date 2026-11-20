@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-20T09:38:05-05:00",
+  "actualizado": "2026-11-20T09:44:08-05:00",
   "moneda": "COP",
   "tipos": [
     {
@@ -33,7 +33,7 @@
     {
       "tipo": "Tipo A",
       "peso": "53 – 59,9 g",
-      "disponible": 15,
+      "disponible": 26,
       "precios": {
         "30": 15000,
         "20": 10700,
@@ -47,7 +47,7 @@
     {
       "tipo": "Tipo AA",
       "peso": "60 – 66,9 g",
-      "disponible": 52,
+      "disponible": 53,
       "precios": {
         "30": 21000,
         "20": 13000,
